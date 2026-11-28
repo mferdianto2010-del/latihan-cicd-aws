@@ -10,11 +10,11 @@ jobs:
   provision:
     runs-on: ubuntu-latest
     env:
-      STACK_NAME: <fill-stack-name>
+      STACK_NAME: workshop-api-wildan
       AWS_REGION: us-east-1
       PROJECT_NAME: workshop-api
-      IMAGES_BUCKET_NAME: <fill-unique-bucket-name>
-      ALLOWED_ORIGINS: <fill-allowed-origin>
+      IMAGES_BUCKET_NAME: workshop-api-images-wildan-2026
+      ALLOWED_ORIGINS: http://example.com
       LAMBDA_ROLE_ARN: ${{ secrets.LAMBDA_ROLE_ARN }}
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
     steps:
@@ -35,11 +35,39 @@ jobs:
           ### Add missing command below ###
           # aws cli to deploy cloudformation. 
           # Don't forget to use parameter for project name, lambda, db password, image bucket, and allowed origins
+          aws cloudformation deploy \
+            --template-file infra/stack.yaml \
+            --stack-name "$STACK_NAME" \
+            --capabilities CAPABILITY_IAM \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides \
+              ProjectName="$PROJECT_NAME" \
+              LambdaExecutionRoleArn="$LAMBDA_ROLE_ARN" \
+              DbPassword="$DB_PASSWORD" \
+              ImagesBucketName="$IMAGES_BUCKET_NAME" \
+              AllowedOrigins="$ALLOWED_ORIGINS"
 
       - name: read stack outputs
         run: |
           ### ADD MISSING CONFIG BELOW ###
           # next steps read ApiUrl, ImagesBucketName, DbClusterArn, DbSecretArn, ApiKeyId and DB_CLUSTER_ARN, DB_SECRET_ARN, DB_NAME
+          OUTPUTS=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Outputs" --output json)
+          ApiUrl=$(echo "$OUTPUTS" | jq -r '.[] | select(.OutputKey=="ApiUrl") | .OutputValue')
+          ImagesBucketName=$(echo "$OUTPUTS" | jq -r '.[] | select(.OutputKey=="ImagesBucketName") | .OutputValue')
+          DbClusterArn=$(echo "$OUTPUTS" | jq -r '.[] | select(.OutputKey=="DbClusterArn") | .OutputValue')
+          DbSecretArn=$(echo "$OUTPUTS" | jq -r '.[] | select(.OutputKey=="DbSecretArn") | .OutputValue')
+          ApiKeyId=$(echo "$OUTPUTS" | jq -r '.[] | select(.OutputKey=="ApiKeyId") | .OutputValue')
+
+          {
+            echo "ApiUrl=$ApiUrl"
+            echo "ImagesBucketName=$ImagesBucketName"
+            echo "DbClusterArn=$DbClusterArn"
+            echo "DbSecretArn=$DbSecretArn"
+            echo "ApiKeyId=$ApiKeyId"
+            echo "DB_CLUSTER_ARN=$DbClusterArn"
+            echo "DB_SECRET_ARN=$DbSecretArn"
+            echo "DB_NAME=appdb"
+          } >> "$GITHUB_ENV"
 
       - name: migrate database
         run: node src/scripts/migrate.js

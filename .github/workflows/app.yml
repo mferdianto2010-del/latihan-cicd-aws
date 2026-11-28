@@ -27,10 +27,13 @@ jobs:
         run: |
           ### Add missing command below
           # zip the source code inside src
+          cd src
+          zip -r ../function.zip .
 
       - name: update function code
         run: |
-          for name in "<fill-list-function-name>" "<fill-upload-function-name>" "<fill-delete-function-name>"; do
+          for name in "${PROJECT_NAME}-list" "${PROJECT_NAME}-upload" "${PROJECT_NAME}-delete"; do
             ### Add missing command below
             # aws cli for lambda update function code using zip
+            aws lambda update-function-code --function-name "$name" --zip-file fileb://function.zip
           done
