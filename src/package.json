@@ -1,0 +1,15 @@
+{
+  "name": "workshop-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Serverless image file API",
+  "main": "handlers/list.js",
+  "scripts": {
+    "migrate": "node scripts/migrate.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-rds-data": "^3.922.0",
+    "@aws-sdk/client-s3": "^3.922.0",
+    "@aws-sdk/s3-request-presigner": "^3.922.0"
+  }
+}
