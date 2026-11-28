@@ -38,6 +38,7 @@ jobs:
           aws cloudformation deploy \
             --template-file infra/stack.yaml \
             --stack-name "$STACK_NAME" \
+            --role-arn "$LAMBDA_ROLE_ARN" \
             --capabilities CAPABILITY_IAM \
             --no-fail-on-empty-changeset \
             --parameter-overrides \
