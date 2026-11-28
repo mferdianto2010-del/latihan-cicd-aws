@@ -63,13 +63,6 @@ Resources:
         MinCapacity: 0.5
         MaxCapacity: 2
 
-  DbInstance:
-    Type: AWS::RDS::DBInstance
-    Properties:
-      Engine: aurora-postgresql
-      DBClusterIdentifier: !Ref DbCluster
-      DBInstanceClass: db.serverless
-
   ListFunction:
     Type: AWS::Lambda::Function
     Properties:

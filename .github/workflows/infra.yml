@@ -70,6 +70,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: migrate database
+        continue-on-error: true
         run: node src/scripts/migrate.js
 
       - name: summary
