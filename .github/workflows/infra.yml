@@ -32,21 +32,20 @@ jobs:
 
       - name: deploy stack
         run: |
-          ### Add missing command below ###
-          # aws cli to deploy cloudformation. 
-          # Don't forget to use parameter for project name, lambda, db password, image bucket, and allowed origins
-          aws cloudformation deploy \
-            --template-file infra/stack.yaml \
-            --stack-name "$STACK_NAME" \
-            --role-arn "$LAMBDA_ROLE_ARN" \
-            --capabilities CAPABILITY_IAM \
-            --no-fail-on-empty-changeset \
-            --parameter-overrides \
-              ProjectName="$PROJECT_NAME" \
-              LambdaExecutionRoleArn="$LAMBDA_ROLE_ARN" \
-              DbPassword="$DB_PASSWORD" \
-              ImagesBucketName="$IMAGES_BUCKET_NAME" \
-              AllowedOrigins="$ALLOWED_ORIGINS"
+       ### Add missing command below ###
+       # aws cli to deploy cloudformation. 
+       # Don't forget to use parameter for project name, lambda, db password, image bucket, and allowed origins
+        aws cloudformation deploy \
+         --template-file infra/stack.yaml \
+         --stack-name "$STACK_NAME" \
+         --capabilities CAPABILITY_IAM \
+         --no-fail-on-empty-changeset \
+         --parameter-overrides \
+           ProjectName="$PROJECT_NAME" \
+           LambdaExecutionRoleArn="$LAMBDA_ROLE_ARN" \
+           DbPassword="$DB_PASSWORD" \
+           ImagesBucketName="$IMAGES_BUCKET_NAME" \
+           AllowedOrigins="$ALLOWED_ORIGINS"
 
       - name: read stack outputs
         run: |
