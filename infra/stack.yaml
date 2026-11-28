@@ -52,7 +52,9 @@ Resources:
     Type: AWS::RDS::DBCluster
     Properties:
       Engine: aurora-postgresql
-      DBClusterIdentifier: !Sub '${ProjectName}-cluster'
+      EngineMode: provisioned
+      EngineVersion: '16.4'
+      DBClusterIdentifier: !Sub '${AWS::StackName}-cluster'
       MasterUsername: !Ref DbUsername
       MasterUserPassword: !Ref DbPassword
       DatabaseName: !Ref DbName
@@ -68,7 +70,7 @@ Resources:
     Properties:
       Engine: aurora-postgresql
       DBClusterIdentifier: !Ref DbCluster
-      DBInstanceIdentifier: !Sub '${ProjectName}-instance'
+      DBInstanceIdentifier: !Sub '${AWS::StackName}-instance'
       DBInstanceClass: db.serverless
 
   ListFunction:
