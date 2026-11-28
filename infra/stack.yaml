@@ -52,8 +52,6 @@ Resources:
     Type: AWS::RDS::DBCluster
     Properties:
       Engine: aurora-postgresql
-      EngineMode: provisioned
-      EngineVersion: '16.4'
       DBClusterIdentifier: !Sub '${AWS::StackName}-cluster'
       MasterUsername: !Ref DbUsername
       MasterUserPassword: !Ref DbPassword
@@ -62,7 +60,7 @@ Resources:
       ### ADD MISSING CONFIG BELOW ###
       EnableHttpEndpoint: true
       ServerlessV2ScalingConfiguration:
-        MinCapacity: 0
+        MinCapacity: 0.5
         MaxCapacity: 2
 
   DbInstance:
@@ -70,7 +68,6 @@ Resources:
     Properties:
       Engine: aurora-postgresql
       DBClusterIdentifier: !Ref DbCluster
-      DBInstanceIdentifier: !Sub '${AWS::StackName}-instance'
       DBInstanceClass: db.serverless
 
   ListFunction:
