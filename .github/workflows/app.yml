@@ -1,0 +1,36 @@
+name: app
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_NAME: workshop-api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: install dependencies
+        run: npm --prefix src ci --omit=dev
+
+      - name: package application
+        run: |
+          ### Add missing command below
+          # zip the source code inside src
+
+      - name: update function code
+        run: |
+          for name in "<fill-list-function-name>" "<fill-upload-function-name>" "<fill-delete-function-name>"; do
+            ### Add missing command below
+            # aws cli for lambda update function code using zip
+          done
