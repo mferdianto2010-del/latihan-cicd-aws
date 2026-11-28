@@ -1,0 +1,54 @@
+name: infra
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "release/v*"
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    env:
+      STACK_NAME: <fill-stack-name>
+      AWS_REGION: us-east-1
+      PROJECT_NAME: workshop-api
+      IMAGES_BUCKET_NAME: <fill-unique-bucket-name>
+      ALLOWED_ORIGINS: <fill-allowed-origin>
+      LAMBDA_ROLE_ARN: ${{ secrets.LAMBDA_ROLE_ARN }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: install dependencies
+        run: npm --prefix src ci
+
+      - name: deploy stack
+        run: |
+          ### Add missing command below ###
+          # aws cli to deploy cloudformation. 
+          # Don't forget to use parameter for project name, lambda, db password, image bucket, and allowed origins
+
+      - name: read stack outputs
+        run: |
+          ### ADD MISSING CONFIG BELOW ###
+          # next steps read ApiUrl, ImagesBucketName, DbClusterArn, DbSecretArn, ApiKeyId and DB_CLUSTER_ARN, DB_SECRET_ARN, DB_NAME
+
+      - name: migrate database
+        run: node src/scripts/migrate.js
+
+      - name: summary
+        run: |
+          echo "### Infrastructure deployed" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ApiUrl: $ApiUrl" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ImagesBucketName: $ImagesBucketName" >> "$GITHUB_STEP_SUMMARY"
+          echo "- DbClusterArn: $DbClusterArn" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ApiKeyId: $ApiKeyId" >> "$GITHUB_STEP_SUMMARY"
+          echo "Read the API key value with: aws apigateway get-api-key --api-key $ApiKeyId --include-value --query value --output text" >> "$GITHUB_STEP_SUMMARY"
