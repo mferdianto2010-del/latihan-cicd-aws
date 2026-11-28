@@ -149,6 +149,39 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*'
 
+  ApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Name: !Sub '${ProjectName}-key'
+      Enabled: true
+
+  ApiKeyAuthorizerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-authorizer'
+      Runtime: nodejs22.x
+      Handler: index.handler
+      Role: !Ref LambdaExecutionRoleArn
+      MemorySize: 128
+      Timeout: 10
+      Environment:
+        Variables:
+          API_KEY_ID: !Ref ApiKey
+      Code:
+        ZipFile: |
+          const { APIGatewayClient, GetApiKeyCommand } = require('@aws-sdk/client-api-gateway');
+          const client = new APIGatewayClient({});
+          let cachedKey;
+          exports.handler = async (event) => {
+            const provided = event.headers?.['x-api-key'] || event.headers?.['X-Api-Key'];
+            if (!provided) return { isAuthorized: false };
+            if (!cachedKey) {
+              const res = await client.send(new GetApiKeyCommand({ apiKey: process.env.API_KEY_ID, includeValue: true }));
+              cachedKey = res.value;
+            }
+            return { isAuthorized: provided === cachedKey };
+          };
+
   HttpApi:
     Type: AWS::ApiGatewayV2::Api
     Properties:
@@ -166,6 +199,27 @@ Resources:
           - POST
           - DELETE
           - OPTIONS
+
+  ApiKeyAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      ApiId: !Ref HttpApi
+      AuthorizerType: REQUEST
+      AuthorizerPayloadFormatVersion: '2.0'
+      EnableSimpleResponses: true
+      Name: ApiKeyAuthorizer
+      AuthorizerUri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiKeyAuthorizerFunction.Arn}/invocations'
+      IdentitySource:
+        - '$request.header.x-api-key'
+      AuthorizerResultTtlInSeconds: 300
+
+  AuthorizerPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ApiKeyAuthorizerFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/authorizers/${ApiKeyAuthorizer}'
 
   ListIntegration:
     Type: AWS::ApiGatewayV2::Integration
@@ -197,8 +251,8 @@ Resources:
       ApiId: !Ref HttpApi
       RouteKey: GET /files
       Target: !Sub 'integrations/${ListIntegration}'
-      AuthorizationType: NONE
-      ApiKeyRequired: true
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref ApiKeyAuthorizer
 
   GetFileRoute:
     Type: AWS::ApiGatewayV2::Route
@@ -206,8 +260,8 @@ Resources:
       ApiId: !Ref HttpApi
       RouteKey: GET /files/{id}
       Target: !Sub 'integrations/${ListIntegration}'
-      AuthorizationType: NONE
-      ApiKeyRequired: true
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref ApiKeyAuthorizer
 
   UploadRoute:
     Type: AWS::ApiGatewayV2::Route
@@ -215,8 +269,8 @@ Resources:
       ApiId: !Ref HttpApi
       RouteKey: POST /files
       Target: !Sub 'integrations/${UploadIntegration}'
-      AuthorizationType: NONE
-      ApiKeyRequired: true
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref ApiKeyAuthorizer
 
   DeleteRoute:
     Type: AWS::ApiGatewayV2::Route
@@ -224,8 +278,8 @@ Resources:
       ApiId: !Ref HttpApi
       RouteKey: DELETE /files/{id}
       Target: !Sub 'integrations/${DeleteIntegration}'
-      AuthorizationType: NONE
-      ApiKeyRequired: true
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref ApiKeyAuthorizer
 
   DefaultStage:
     Type: AWS::ApiGatewayV2::Stage
@@ -233,31 +287,6 @@ Resources:
       ApiId: !Ref HttpApi
       StageName: $default
       AutoDeploy: true
-
-  ApiKey:
-    Type: AWS::ApiGateway::ApiKey
-    Properties:
-      Name: !Sub '${ProjectName}-key'
-      Enabled: true
-
-  UsagePlan:
-    Type: AWS::ApiGateway::UsagePlan
-    Properties:
-      UsagePlanName: !Sub '${ProjectName}-usage-plan'
-      Throttle:
-        BurstLimit: 50
-        RateLimit: 100
-      ### ADD MISSING CONFIG BELOW ###
-      ApiStages:
-        - ApiId: !Ref HttpApi
-          Stage: !Ref DefaultStage
-
-  UsagePlanKey:
-    Type: AWS::ApiGateway::UsagePlanKey
-    Properties:
-      KeyId: !Ref ApiKey
-      KeyType: API_KEY
-      UsagePlanId: !Ref UsagePlan
 
 Outputs:
   ApiUrl:
